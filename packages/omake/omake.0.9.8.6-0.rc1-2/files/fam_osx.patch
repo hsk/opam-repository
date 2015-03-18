@@ -1,0 +1,537 @@
+diff -ru a/src/Makefile b/src/Makefile
+--- a/src/Makefile	2008-01-16 04:57:00.000000000 +0900
++++ b/src/Makefile	2015-03-18 08:02:35.000000000 +0900
+@@ -98,6 +98,9 @@
+ fam_win32.c: ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_win32.c
+ 	$(LN) ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_win32.c fam_win32.c
+ 
++fam_osx.c: ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_osx.c
++	$(LN) ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_osx.c fam_osx.c
++
+ fam_kqueue.c: ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_kqueue.c
+ 	$(LN) ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)fam_kqueue.c fam_kqueue.c
+ 
+@@ -128,7 +131,7 @@
+ lm_fs_case_sensitive.c: ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)lm_fs_case_sensitive.c
+ 	$(LN) ..$(slash)src$(slash)clib$(slash)..$(slash)libmojave-external$(slash)cutil$(slash)lm_fs_case_sensitive.c lm_fs_case_sensitive.c
+ 
+-OFILES_clib = lm_heap$(EXT_OBJ) lm_channel$(EXT_OBJ) lm_printf$(EXT_OBJ) lm_ctype$(EXT_OBJ) lm_uname_ext$(EXT_OBJ) lm_unix_cutil$(EXT_OBJ) lm_compat_win32$(EXT_OBJ) readline$(EXT_OBJ) omake_shell_sys$(EXT_OBJ) fam_win32$(EXT_OBJ) fam_kqueue$(EXT_OBJ) fam_inotify$(EXT_OBJ) lm_notify$(EXT_OBJ) lm_termsize$(EXT_OBJ) lm_terminfo$(EXT_OBJ) lm_fs_case_sensitive$(EXT_OBJ)
++OFILES_clib = lm_heap$(EXT_OBJ) lm_channel$(EXT_OBJ) lm_printf$(EXT_OBJ) lm_ctype$(EXT_OBJ) lm_uname_ext$(EXT_OBJ) lm_unix_cutil$(EXT_OBJ) lm_compat_win32$(EXT_OBJ) readline$(EXT_OBJ) omake_shell_sys$(EXT_OBJ) fam_win32$(EXT_OBJ) fam_osx$(EXT_OBJ) fam_kqueue$(EXT_OBJ) fam_inotify$(EXT_OBJ) lm_notify$(EXT_OBJ) lm_termsize$(EXT_OBJ) lm_terminfo$(EXT_OBJ) lm_fs_case_sensitive$(EXT_OBJ)
+ 
+ clib$(EXT_LIB): $(OFILES_clib)
+ 	-$(RM) $@
+@@ -142,7 +145,7 @@
+ readline.c: $(SRC_clib)$(slash)readline.c
+ 	$(LN) $(SRC_clib)$(slash)readline.c readline.c
+ 
+-ALLFILES_clib = omake_shell_sys.c readline.c lm_heap.c lm_heap.h lm_channel.c lm_compat_win32.c lm_compat_win32.h lm_ctype.c lm_printf.c lm_uname_ext.c lm_unix_cutil.c unixsupport.h fam_win32.c fam_kqueue.c fam_inotify.c fam_pseudo.h lm_notify.c inotify.h inotify-syscalls.h inotify.om lm_termsize.c lm_terminfo.c lm_fs_case_sensitive.c
++ALLFILES_clib = omake_shell_sys.c readline.c lm_heap.c lm_heap.h lm_channel.c lm_compat_win32.c lm_compat_win32.h lm_ctype.c lm_printf.c lm_uname_ext.c lm_unix_cutil.c unixsupport.h fam_win32.c fam_osx$(EXT_OBJ) fam_kqueue.c fam_inotify.c fam_pseudo.h lm_notify.c inotify.h inotify-syscalls.h inotify.om lm_termsize.c lm_terminfo.c lm_fs_case_sensitive.c
+ 
+ 
+ lm_printf.ml: ..$(slash)src$(slash)libmojave$(slash)..$(slash)libmojave-external$(slash)stdlib$(slash)lm_printf.ml
+diff -ru a/src/clib/OMakefile b/src/clib/OMakefile
+--- a/src/clib/OMakefile	2007-06-28 08:59:16.000000000 +0900
++++ b/src/clib/OMakefile	2015-03-18 08:00:55.000000000 +0900
+@@ -15,6 +15,7 @@
+     lm_unix_cutil.c
+     unixsupport.h
+     fam_win32.c
++    fam_osx.c
+     fam_kqueue.c
+     fam_inotify.c
+     fam_pseudo.h
+@@ -52,6 +53,7 @@
+     readline
+     omake_shell_sys
+     fam_win32
++    fam_osx
+     fam_kqueue
+     fam_inotify
+     lm_notify
+diff -ru a/src/libmojave-external/cutil/OMakefile b/src/libmojave-external/cutil/OMakefile
+--- a/src/libmojave-external/cutil/OMakefile	2007-04-25 09:28:44.000000000 +0900
++++ b/src/libmojave-external/cutil/OMakefile	2015-03-18 08:01:08.000000000 +0900
+@@ -43,6 +43,7 @@
+     lm_compat_win32
+     lm_unix_cutil
+     fam_win32
++    fam_osx
+     fam_kqueue
+     fam_inotify
+     lm_notify
+diff -ru a/src/libmojave-external/cutil/fam_kqueue.c b/src/libmojave-external/cutil/fam_kqueue.c
+--- a/src/libmojave-external/cutil/fam_kqueue.c	2007-04-10 05:44:49.000000000 +0900
++++ b/src/libmojave-external/cutil/fam_kqueue.c	2015-03-18 08:16:43.000000000 +0900
+@@ -40,6 +40,7 @@
+  * @end[license]
+  */
+ #ifdef FAM_KQUEUE
++#ifndef __APPLE__
+ 
+ #include <sys/types.h>
+ #include <sys/event.h>
+@@ -590,6 +591,7 @@
+     return -1;
+ }
+ 
++#endif /* __APPLE__ */
+ #else /* FAM_KQUEUE */
+ 
+ #if defined(WIN32) || defined(_WIN32)
+diff -ru a/src/main/OMakefile b/src/main/OMakefile
+--- a/src/main/OMakefile	2006-10-20 01:39:16.000000000 +0900
++++ b/src/main/OMakefile	2015-03-18 06:29:21.000000000 +0900
+@@ -14,6 +14,10 @@
+     ../build
+     ../builtin
+ 
++if $(equal $(SYSNAME), Darwin)
++    OCAMLFLAGS += -ccopt -framework -ccopt CoreFoundation -ccopt -framework -ccopt CoreServices
++    export
++
+ #
+ # Helper programs
+ #
+diff -urN a/src/libmojave-external/cutil/fam_osx.c b/src/libmojave-external/cutil/fam_osx.c
+--- a/src/libmojave-external/cutil/fam_osx.c	1970-01-01 09:00:00.000000000 +0900
++++ b/src/libmojave-external/cutil/fam_osx.c	2015-03-18 08:07:19.000000000 +0900
+@@ -0,0 +1,439 @@
++/*
++ * This implements a FAM-like service for systems that support the FreeBSD
++ * kqueue interface.  In particular, this has been tested on Mac OS X 10.3.
++ *
++ * Here's the basic design:
++ *  We keep an array of DirInfo pointers.  When the client requests a dir to
++ *  be monitored, we find a free slot and allocate a DirInfo for it.  We then
++ *  create a kevent_t to monitor that directory, storing a pointer to its
++ *  DirInfo as its userdata.
++ *
++ *  When we retrieve an event, we turn it into one or more FAMEvents, putting
++ *  each new event on a per-FAMConnection queue
++ *
++ * ----------------------------------------------------------------
++ *
++ * @begin[license]
++ * Copyright (C) 2004 Nathaniel Gray, Caltech
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation,
++ * version 2.1 of the License.
++ * 
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ * 
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
++ * 
++ * Additional permission is given to link this library with the
++ * OpenSSL project's "OpenSSL" library, and with the OCaml runtime,
++ * and you may distribute the linked executables.  See the file
++ * LICENSE.libmojave for more details.
++ *
++ * Author: Nathaniel Gray
++ * @email{n8gray@cs.caltech.edu}
++ * @end[license]
++ */
++#ifdef FAM_KQUEUE
++//#define FAM_DEBUG 1
++#ifdef __APPLE__
++
++#include <libgen.h>
++#include <stdarg.h>
++#include <stdio.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++#include <unistd.h>
++
++
++#include <CoreFoundation/CoreFoundation.h>
++#include <CoreServices/CoreServices.h>
++
++#undef NAME_MAX
++
++#include "fam_pseudo.h"
++
++
++
++/*
++ * Max utility.
++ */
++#define MAX(i, j)               ((i) < (j) ? (j) : (i))
++#define MIN(i, j)               ((i) > (j) ? (j) : (i))
++
++static char *code_names[] = {
++    "No Code",
++    "Changed",
++    "Deleted",
++    "StartExecuting",
++    "StopExecuting",
++    "Created",
++    "Moved",
++    "Acknowledge",
++    "Exists",
++    "EndExist",
++    "DirectoryChanged"
++};
++
++int FAMErrno = 0;
++
++char *FamErrlist[] = {
++    "No Error",
++    "Too many directories",
++    "Directory does not exist",
++    "Windows error",
++    "Out of memory",
++    "Bad request number",
++    "Request already exists",
++    "Not implemented",
++    "Permission denied",
++    "Unknown error"
++};
++
++/*
++ * Info for each directory.
++ * We keep a request number, for compatibility
++ * with Unix FAM.
++ */
++typedef struct dir_info {
++    unsigned request;                   // Request number
++    FSEventStreamRef stream;            // Watch descriptor
++    void *userdata;                     // User data for this directory
++    char name[1];                       // Name of the directory
++} DirInfo;
++
++
++FSEventStreamRef get_stream(FAMConnection* fc) {
++    int request;
++    for(request = 0; request != fc->dir_count; request++) {
++        if(fc->dirs[request] != 0)
++            return fc->dirs[request]->stream;
++    }
++    return NULL;
++}
++
++void event_cb(ConstFSEventStreamRef streamRef,
++              void *ctx,
++              size_t count,
++              void *dirs,
++              const FSEventStreamEventFlags flags[],
++              const FSEventStreamEventId ids[]) {
++
++    size_t i;
++    size_t ignored_dirs = 0;
++    FAMEvent *eventp;
++    DirInfo *dirp;
++
++    #ifdef FAM_DEBUG
++        fprintf(stderr, "count=%ld\n",count);
++        fflush(stderr);
++    #endif
++
++
++    FAMConnection *fc = (FAMConnection*)ctx;
++    if (fc->dir_count >= MAX_DIR_COUNT) return;
++    for (i = 0; i < count; i++) {
++        char *path = ((char **)dirs)[i];
++        #ifdef FAM_DEBUG
++
++            /* flags are unsigned long, IDs are uint64_t */
++            fprintf(stderr, "Change %llu in %s, flags %lu\n", ids[i], path, (long)flags[i]);
++            fflush(stderr);
++        #endif
++        int rd;
++        // Find the directory this belongs to
++        for(rd = 0; rd != fc->dir_count; rd++) {
++            dirp = fc->dirs[rd];
++//            if(dirp && dirp->wd == ievent->wd)
++            if(dirp)
++                break;
++        }
++        if(rd == fc->dir_count) {
++            return;
++        }
++        /* TODO: this logic is wrong */
++        ignored_dirs++;
++
++        eventp = malloc(sizeof(FAMEvent));
++        if(eventp == 0)
++            break;
++        eventp->fc = fc;
++        eventp->fr.reqnum = rd;
++        eventp->userdata = dirp->userdata;
++        eventp->code = FAMChanged;
++        eventp->next = 0;
++
++        /* Copy the name */
++        int amount = MIN(NAME_MAX - 1, strlen(path));
++        memcpy(eventp->filename, path, amount);
++        eventp->filename[amount] = 0;
++
++        /* Link it in */
++        if(fc->last == 0)
++            fc->event = fc->last = eventp;
++        else
++            fc->last = fc->last->next = eventp;
++
++    }
++    if (count > ignored_dirs) {
++        /* OS X occasionally leaks event streams. Manually stop the stream just to make sure. */
++        FSEventStreamStop((FSEventStreamRef)streamRef);
++        exit(0);
++    }
++    CFRunLoopStop(CFRunLoopGetCurrent());
++}
++
++
++char* get_path(const char* name) {
++    char *path = realpath(name, NULL);
++    if (path == NULL) {
++        char *dir_name = NULL;
++        const char* path1 = dirname((char*)name);
++        if (strcmp(path1, ".") == 0) {
++            /* realpath(".") returns a useless path like /User */
++            dir_name = realpath("./", NULL);
++        } else {
++            dir_name = realpath(path1, NULL);
++        }
++        if (dir_name == NULL) {
++            fprintf(stderr, "Error %i in realpath(\"%s\"): %s\n", errno, path, strerror(errno));
++            exit(1);
++        }
++        char* file_name = basename((char*)name);
++        asprintf(&path, "%s/%s", dir_name, file_name);
++        free(dir_name);
++    }
++    return path;
++}
++
++
++/************************************************************************
++ * Public functions.
++ */
++
++
++int FAMOpen(FAMConnection *fc) {
++    #ifdef FAM_DEBUG
++        fprintf(stderr, "FAMOpen %p\n", fc);
++        fflush(stderr);
++    #endif
++
++    memset(fc, 0, sizeof(*fc));
++    fc->id = 0;
++    return 0;
++}
++
++int FAMClose(FAMConnection *fc) {
++    #ifdef FAM_DEBUG
++        fprintf(stderr, "FAMClose %p\n", fc);
++        fflush(stderr);
++    #endif
++
++    if (fc->id != 0) {
++        unsigned int request;
++        for(request = 0; request != fc->dir_count; request++) {
++            if(fc->dirs[request] != 0) {
++                free(fc->dirs[request]);
++            }
++        }
++        FAMEvent* next;
++        FAMEvent* event = fc->event;
++        while(event) {
++            next = event->next;
++            free(event);
++            event = next;
++        }
++        FSEventStreamRef stream = get_stream(fc);
++        CFMutableArrayRef dirs = (CFMutableArrayRef)FSEventStreamCopyPathsBeingWatched(stream);
++        CFRelease(dirs);
++        FSEventStreamStop(stream);
++        FSEventStreamInvalidate(stream);
++        FSEventStreamRelease(stream);
++    }
++    memset(fc, 0, sizeof(*fc));
++    return 0;
++}
++
++
++int FAMMonitorDirectory(FAMConnection *fc, const char *name, FAMRequest *requestp, void *userdata) {
++    unsigned int request;
++
++    #ifdef FAM_DEBUG
++        fprintf(stderr, "FAMMonitorDirectory %p %s\n", fc, name);
++        fflush(stderr);
++    #endif
++
++    /* Search for a slot */
++    for(request = 0; request != fc->dir_count; request++) {
++        if(fc->dirs[request] == 0)
++            break;
++    }
++
++    unsigned int length = sizeof(DirInfo) + strlen(name);
++    DirInfo *dir = (DirInfo *) malloc(length);
++    if(dir == 0) {
++        FAMErrno = FAM_OUT_OF_MEMORY;
++        return -1;
++    }
++    requestp->reqnum = request;
++    memset(dir, 0, length);
++
++    /* Initialize */
++    dir->request = request;
++    dir->userdata = userdata;
++    strcpy(dir->name, name);
++    fc->dirs[request] = dir;
++    fc->dir_count = MAX(request + 1, fc->dir_count);
++
++    FSEventStreamRef stream;
++    CFMutableArrayRef dirs = CFArrayCreateMutable(NULL, 0, NULL);
++
++    if (fc->id != 0) {
++        stream = get_stream(fc);
++        CFArrayRef dirs1 = (CFArrayRef)FSEventStreamCopyPathsBeingWatched(stream);
++        FSEventStreamStop(stream);
++        FSEventStreamInvalidate(stream);
++        FSEventStreamRelease(stream);
++
++        int count = CFArrayGetCount(dirs1);
++        CFRange range = { 0, count };
++        CFArrayAppendArray(dirs, dirs1 ,range);
++        fc->id = 1;
++    }
++
++    char* dir_name = get_path(name);
++    CFStringRef cfs_name = CFStringCreateWithCString(NULL, dir_name, kCFStringEncodingUTF8);
++    free(dir_name);
++
++    CFArrayAppendValue(dirs, cfs_name); /* pretty sure I'm leaking this */
++
++    FSEventStreamContext ctx = { 0, fc, NULL, NULL, NULL };
++    stream = FSEventStreamCreate(NULL, &event_cb, &ctx, dirs, 
++        kFSEventStreamEventIdSinceNow, 0, kFSEventStreamCreateFlagFileEvents);
++    FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
++    FSEventStreamStart(stream);
++    dir->stream = stream;
++    return 0;
++}
++
++int FAMNextEvent(FAMConnection *fc, FAMEvent *event) {
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMNextEvent %p\n", fc);
++    fflush(stderr);
++#endif
++
++
++    while(1) {
++        /* See if there is already an event */
++        FAMEvent *current = fc->event;
++        if(current) {
++            #if FAM_DEBUG
++                        fprintf(stderr, "Request: %d, Name: %s, Event: %s\n", current->fr.reqnum, current->filename, code_names[current->code]);
++                        fflush(stderr);
++            #endif
++            *event = *current;
++            fc->event = current->next;
++            if(fc->event == NULL)
++                fc->last = NULL;
++            free(current);
++            return 0;
++        }
++
++        /* If not, blocking poll for an event */
++#if FAM_DEBUG
++        fprintf( stderr, "FAMNextEvent: blocking...\n" );
++        fflush(stderr);
++#endif
++        CFRunLoopRun();
++#if FAM_DEBUG
++        fprintf( stderr, "FAMNextEvent: request \n");
++        fflush(stderr);
++#endif
++    }
++
++    return -1;
++}
++
++
++/*
++ * Cancel monitoring.
++ */
++int FAMCancelMonitor(FAMConnection *fc, FAMRequest *requestp)
++{
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMCancelMonitor %p FAM_NOT_IMPLEMENTED\n", fc);
++    fflush(stderr);
++#endif
++
++    FAMErrno = FAM_NOT_IMPLEMENTED;
++    return -1;
++}
++
++/*
++ * See if there is a pending event.
++ */
++int FAMPending(FAMConnection *fc)
++{
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMPending %p %p\n", fc, fc->event);
++    fflush(stderr);
++#endif
++    if(CFRunLoopIsWaiting(CFRunLoopGetCurrent())) {
++        CFRunLoopRun();
++    }
++    if(fc->event) {
++        return 1;
++    }
++    return 0;
++}
++
++/*****************************************************************************
++ * Functions from the FAM interface that aren't implemented
++ * The first two probably work, but they've never been tested.
++ */
++
++/*
++ * Suspend monitoring.
++ */
++int FAMSuspendMonitor(FAMConnection *fc, FAMRequest *requestp)
++{
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMSuspendMonitor %p FAM_NOT_IMPLEMENTED\n", fc);
++    fflush(stderr);
++#endif
++    FAMErrno = FAM_NOT_IMPLEMENTED;
++    return -1;
++}
++
++/*
++ * Resume monitoring.
++ */
++int FAMResumeMonitor(FAMConnection *fc, FAMRequest *requestp)
++{
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMResumeMonitor %p FAM_NOT_IMPLEMENTED\n", fc);
++    fflush(stderr);
++#endif
++    FAMErrno = FAM_NOT_IMPLEMENTED;
++    return -1;
++}
++
++/* This is not supposed to be called on kqueue systems */
++int FAMMonitorDirectoryTree(FAMConnection *fc, const char *name, FAMRequest *request, void *userdata)
++{
++#ifdef FAM_DEBUG
++    fprintf(stderr, "FAMMonitorDirectoryTree %p FAM_NOT_IMPLEMENTED\n", fc);
++    fflush(stderr);
++#endif
++    FAMErrno = FAM_NOT_IMPLEMENTED;
++    return -1;
++}
++
++#endif /* __APPLE__ */
++#endif /* FAM_KQUEUE */
